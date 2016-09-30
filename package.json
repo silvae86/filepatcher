@@ -1,0 +1,26 @@
+{
+  "name": "filepatcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "filepatcher.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/silvae86/filepatcher.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/silvae86/filepatcher/issues"
+  },
+  "homepage": "https://github.com/silvae86/filepatcher#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "minimist": "^1.2.0"
+  }
+}

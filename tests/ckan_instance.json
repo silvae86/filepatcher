@@ -1,0 +1,84 @@
+[
+  {
+    "id" : "set_database_password",
+    "description" : "Set postgresql password",
+    "file": "/etc/ckan/default/development.ini",
+    "patches" :
+    [
+      {
+        "before": "sqlalchemy.url = postgresql://ckan_default:pass@localhost/ckan_default",
+        "after": "sqlalchemy.url = postgresql://ckan_default:__FIXME_VERY_LONG_AND_COMPLICATED_PASSWORD@localhost/ckan_default"
+      }
+    ]
+
+  },
+  {
+    "id" : "change_site_id",
+    "description" : "Set CKAN site ID",
+    "file": "/etc/ckan/default/development.ini",
+    "patches" :
+    [
+      {
+        "before": "ckan.site_id = default",
+        "after": "ckan.site_id = ckan_instance"
+      }
+    ]
+
+  },
+  {
+    "id" : "change_site_url",
+    "description" : "Set CKAN Site URL",
+    "file": "/etc/ckan/default/development.ini",
+    "patches" :
+    [
+      {
+        "before": "ckan.site_url = http://demo.ckan.org",
+        "after": "ckan.site_url = http://my.website.pt"
+      }
+    ]
+  },
+  {
+    "id" : "change_site_url",
+    "description" : "Set CKAN Site URL",
+    "file": "/etc/ckan/default/development.ini",
+    "patches" :
+    [
+      {
+        "before": "ckan.site_url = http://demo.ckan.org",
+        "after": "ckan.site_url = http://rdm.inesctec.pt"
+      }
+    ]
+  },
+  {
+    "id" : "change_jetty_configs",
+    "description" : "Set Jetty Configs",
+    "file": "/etc/ckan/default/development.ini",
+    "patches" :
+    [
+      {
+        "before": "ckan.site_url = http://demo.ckan.org",
+        "after": "NO_START=0            # (line 4)"
+      },
+      {
+        "before": "ckan.site_url = http://demo.ckan.org",
+        "after": "JETTY_HOST=127.0.0.1  # (line 16)"
+      },
+      {
+        "before": "ckan.site_url = http://demo.ckan.org",
+        "after": "JETTY_PORT=8983       # (line 19)"
+      }
+    ]
+  },
+  {
+    "id": "set_solr_config",
+    "description": "Set SOLR Configs on CKAN configuration file",
+    "file": "/etc/ckan/default/development.ini",
+    "patches":
+    [
+      {
+        "before": "ckan.site_url = http://demo.ckan.org",
+        "after": "solr_url=http://127.0.0.1:8983/solr"
+      }
+    ]
+  }
+]
