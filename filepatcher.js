@@ -26,6 +26,14 @@ var arguments = {
 		optional : true
 	},
 
+    "overwrite" :
+    {
+        type: "boolean",
+        example : "true|false",
+        tip : "Coming soon",
+        optional : true
+    },
+
     "destination-patched-file":
     {
         type: "string",
@@ -39,15 +47,29 @@ var extensions = JSON.parse(fs.readFileSync("./extensions.json"));
 
 var argv = require('minimist')(process.argv.slice(2));
 
+var get_patched_text = function(patchID, patchSection, cchar)
+{
+    var template = "";
+
+    template += cchar + " " + "BEGIN Autopatched section using filepatcher. Patch id: "+patchID+"\n";
+    template += patchSection.after + "\n";
+    template += cchar + " " + "END Autopatched section using filepatcher.\n";
+
+    return template;
+};
+
 var apply_patch = function(text, patch, cChar)
 {
     console.log("Applying patch " + patch.id);
     for(var i = 0; i < patch.patches.length; i++)
     {
-        if(!patch_applied(text, patch.patches[i],cChar))
+        if(!patch_applied(text, patch.patches[i], cChar))
         {
-            console.log("Applied patch " + i + " of " + patch.id);
-            text.text =  text.text.replace(patch['before'], get_patched_text(patch.patches[i], cChar));
+            console.log("Applying patch " + i + " of " + patch.id);
+
+            var beforeText = patch.patches[i]['before'];
+            var afterText = get_patched_text(patch.id, patch.patches[i], cChar);
+            text.text =  text.text.replace(beforeText, afterText);
         }
         else
         {
@@ -56,20 +78,9 @@ var apply_patch = function(text, patch, cChar)
     }
 };
 
-var get_patched_text = function(patch, cchar)
+var patch_applied = function(text, patchSection, patchID, cChar)
 {
-	var template = "";
-
-	template += cchar + " " + "BEGIN AUTOPATCHED using filepatcher.\n";
-	template += patch.after + "\n";
-	template += cchar + " " + "END AUTOPATCHED using filepatcher.\n";
-
-	return template;
-};
-
-var patch_applied = function(text, patch, cChar)
-{
-	var patched_version = get_patched_text(patch, cChar);
+	var patched_version = get_patched_text(patchID, patchSection, cChar);
 
 	if(text.text.indexOf(patched_version) > -1)
 	{
@@ -86,39 +97,38 @@ var apply_patches = function(fileToBePatched, patchesFile)
 	var fs = require('fs');
     var path = require('path');
 
-    try{
+    try
+    {
         var stats = fs.statSync(fileToBePatched);
-        if(stats.isFile())
-        {
-            var fileContents = fs.readFileSync(fileToBePatched, "utf8");
-            var extension = path.extname(fileToBePatched);
-            var cChar = extensions[extension];
-
-            if(cChar == null)
-            {
-                console.error("Extension " + extension + " has no known single line comment. Set it up in the extensions.json file and run this again.");
-                process.exit(1);
-            }
-
-            var patches = JSON.parse(fs.readFileSync(patchesFile, 'utf8'));
-
-            for(var i = 0 ; i < patches.length; i++)
-            {
-                console.log("Running patch: " + colors.blue(patches[i].description));
-
-                for(var j = 0; j < patches[i].patches.length; j++)
-                {
-                    apply_patch({text: fileContents}, patches[i], cChar);
-                }
-            }
-
-            console.log(fileContents);
-            return fileContents;
-        }
     }
     catch(e)
     {
         throw new Error("File " + fileToBePatched + " does not exist!" + "\n" + e);
+    }
+    if(stats.isFile())
+    {
+        var fileContents = fs.readFileSync(fileToBePatched, "utf8");
+        var extension = path.extname(fileToBePatched);
+        var cChar = extensions[extension];
+
+        if (cChar == null)
+        {
+            console.error("Extension " + extension + " has no known single line comment. Set it up in the extensions.json file and run this again.");
+            process.exit(1);
+        }
+
+        var patches = JSON.parse(fs.readFileSync(patchesFile, 'utf8'));
+
+        var fileContentsPackage = {text: fileContents};
+
+        for (var i = 0; i < patches.length; i++)
+        {
+            console.log("Running patch: " + colors.blue(patches[i].description));
+            apply_patch(fileContentsPackage, patches[i], cChar);
+        }
+
+        //console.log(fileContents);
+        return fileContentsPackage.text;
     }
 };
 
@@ -216,7 +226,7 @@ var print_usage = function(arguments)
 		}
 	}
 
-	console.log(output);
+	//console.log(output);
 };
 
 var missing_arguments = detect_missing_arguments(arguments);
@@ -237,7 +247,7 @@ if(missing_arguments.length == 0)
         console.log("Starting file patching.");
 
         var patchedFileContents = apply_patches(argv["file-to-patch"], argv["patch-config"]);
-        console.log(patchedFileContents);
+        //console.log(patchedFileContents);
 
         if(argv["destination-patched-file"] != null)
         {
@@ -256,17 +266,23 @@ if(missing_arguments.length == 0)
 
 			if (stats.isFile())
 			{
-				console.log('File exists');
-				fs.unlinkSync(destination);
-				try
+                if(argv.overwrite)
 				{
-					fs.writeFileSync(destination, patchedFileContents);
+                    console.log("File exists, but the --overwrite flag was specified. Overwriting it.");
+					try
+					{
+                        fs.unlinkSync(destination);
+						fs.writeFileSync(destination, patchedFileContents);
+					}
+					catch (e)
+					{
+						console.log('Error writing patched contents to file : ' + destination, e.code);
+					}
 				}
-				catch (e)
+				else
 				{
-					console.log('Error writing patched contents to file : ' + destination, e.code);
+					console.error("File exists, so we are not modifying it. Specify the --overwrite to force replacement.");
 				}
-
 			}
 		}
 		catch(e)
